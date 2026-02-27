@@ -1,6 +1,7 @@
-@panContas.API_HostAddress = https://localhost:7112
-@panContas.API_HostAddressHttp = http://localhost:5262
+@panContas.API_HostAddress = http://3.84.227.229:5262 
+@panContas.API_HostAddressHttp = http://3.84.227.229:5262
 
+// --https://localhost:7112
 // --- PESSOA FISICA V1 ---
 
 ### Obter todas as Pessoas Físicas
