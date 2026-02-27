@@ -35,8 +35,8 @@ O projeto foi configurado com Multi-stage builds do Docker para rodar API e Fron
    docker-compose up --build -d
    ```
 3. O Compose vai baixar os SDKs necessários, compilar a solução completa e subir dois contêineres:
-   - **Back-end (API e Swagger):** Acessível em [http://localhost:5262/swagger](http://localhost:5262/swagger)
-   - **Front-end (Painel Blazor):** Acessível em [http://localhost:5100](http://localhost:5100)
+   - **Back-end (API e Swagger):** Acessível em [http://3.84.227.229:5262/swagger](http://3.84.227.229:5262/swagger)
+   - **Front-end (Painel Blazor):** Acessível em [http://3.84.227.229:5100](http://3.84.227.229:5100)
 
 4. **Para parar os servidores temporariamente**, execute:
    ```bash
