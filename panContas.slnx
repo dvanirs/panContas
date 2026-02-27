@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="panContas.API/panContas.API.csproj" />
+  <Project Path="panContas.Application/panContas.Application.csproj" />
+  <Project Path="panContas.Domain/panContas.Domain.csproj" />
+  <Project Path="panContas.Front/panContas.Front.csproj" Id="7a834f31-c544-4e9f-a77f-5f55433df047" />
+  <Project Path="panContas.Infrastructure/panContas.Infrastructure.csproj" />
+</Solution>

@@ -1,0 +1,375 @@
+@page "/pessoa-fisica/novo"
+@page "/pessoa-fisica/editar/{Id:guid}"
+@rendermode InteractiveServer
+@inject PessoaFisicaApiService PessoaFisicaService
+@inject NavigationManager Nav
+@using panContas.Front.Models
+@using panContas.Front.Services
+
+<PageTitle>@(Id == null ? "Nova Pessoa Física" : "Editar Pessoa Física")</PageTitle>
+
+<div class="pf-header mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/pessoa-fisica">Pessoas Físicas</a></li>
+            <li class="breadcrumb-item active">@(Id == null ? "Nova" : "Editar")</li>
+        </ol>
+    </nav>
+    <h1 class="pf-title">
+        <i class="bi bi-person-fill me-2"></i>
+        @(Id == null ? "Nova Pessoa Física" : "Editar Pessoa Física")
+    </h1>
+</div>
+
+@if (carregando)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Carregando...</p>
+    </div>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(mensagemErro))
+    {
+        <div class="alert alert-danger d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @mensagemErro
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(mensagemSucesso))
+    {
+        <div class="alert alert-success d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i> @mensagemSucesso
+        </div>
+    }
+
+    <EditForm Model="pessoa" OnValidSubmit="Salvar">
+        <DataAnnotationsValidator />
+
+        <!-- Dados Pessoais -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-person-vcard me-2"></i><strong>Dados Pessoais</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nome completo <span class="text-danger">*</span></label>
+                        <InputText class="form-control" @bind-Value="pessoa.Nome" placeholder="Nome completo" />
+                        <ValidationMessage For="@(() => pessoa.Nome)" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">CPF <span class="text-danger">*</span></label>
+                        <InputText class="form-control" Value="@pessoa.Cpf" 
+                                   ValueChanged="@((string val) => FormatarCpf(val))" 
+                                   ValueExpression="@(() => pessoa.Cpf)" 
+                                   @oninput="@((ChangeEventArgs e) => FormatarCpf(e.Value?.ToString() ?? ""))"
+                                   onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 45 || event.charCode == 46;"
+                                   placeholder="000.000.000-00" maxlength="14" />
+                        <ValidationMessage For="@(() => pessoa.Cpf)" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Data de Nascimento <span class="text-danger">*</span></label>
+                        <InputDate class="form-control" @bind-Value="pessoa.DataNascimento" />
+                        <ValidationMessage For="@(() => pessoa.DataNascimento)" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Sexo <span class="text-danger">*</span></label>
+                        <InputSelect class="form-select" @bind-Value="pessoa.Sexo">
+                            <option value="">Selecione...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Outro">Outro</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => pessoa.Sexo)" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Telefone</label>
+                        <InputText class="form-control" Value="@pessoa.Telefone" 
+                                   ValueChanged="@((string val) => FormatarTelefone(val))" 
+                                   ValueExpression="@(() => pessoa.Telefone)" 
+                                   @oninput="@((ChangeEventArgs e) => FormatarTelefone(e.Value?.ToString() ?? ""))"
+                                   onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 45 || event.charCode == 40 || event.charCode == 41 || event.charCode == 32;"
+                                   placeholder="(00) 00000-0000" maxlength="15" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endereço -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-geo-alt-fill me-2"></i><strong>Endereço</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- CEP com busca automática -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">CEP <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <InputText class="form-control" Value="@cepInput" 
+                                       ValueChanged="@((string val) => FormatarCep(val))" 
+                                       ValueExpression="@(() => cepInput)"
+                                       @oninput="@((ChangeEventArgs e) => FormatarCep(e.Value?.ToString() ?? ""))"
+                                       onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 45;"
+                                       placeholder="00000-000" maxlength="9"
+                                       @onkeydown="CepKeyDown" />
+                            <button type="button" class="btn btn-outline-secondary"
+                                    @onclick="BuscarCep" disabled="@buscandoCep" title="Buscar CEP">
+                                @if (buscandoCep)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-search"></i>
+                                }
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(erroCep))
+                        {
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>@erroCep</div>
+                        }
+                        <div class="form-text">Pressione Enter ou clique na lupa para buscar</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Logradouro</label>
+                        <InputText class="form-control" @bind-Value="pessoa.Endereco.Logradouro"
+                                   readonly="@enderecoReadonly" placeholder="Preenchido pelo CEP" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Complemento</label>
+                        <InputText class="form-control" @bind-Value="pessoa.Endereco.Complemento"
+                                   placeholder="Apto, Sala, Bloco..." />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Bairro</label>
+                        <InputText class="form-control" @bind-Value="pessoa.Endereco.Bairro"
+                                   readonly="@enderecoReadonly" placeholder="Preenchido pelo CEP" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Cidade (Localidade)</label>
+                        <InputText class="form-control" @bind-Value="pessoa.Endereco.Localidade"
+                                   readonly="@enderecoReadonly" placeholder="Preenchido pelo CEP" />
+                    </div>
+
+                    <div class="col-md-1">
+                        <label class="form-label fw-semibold">UF</label>
+                        <InputText class="form-control text-uppercase" @bind-Value="pessoa.Endereco.UF"
+                                   readonly="@enderecoReadonly" placeholder="UF" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Estado</label>
+                        <InputText class="form-control" @bind-Value="pessoa.Endereco.Estado"
+                                   readonly="@enderecoReadonly" placeholder="Preenchido pelo CEP" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="d-flex gap-2 justify-content-end mb-5">
+            <a href="/pessoa-fisica" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-1"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg" disabled="@salvando">
+                @if (salvando)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                else
+                {
+                    <i class="bi bi-floppy-fill me-1"></i>
+                }
+                @(salvando ? "Salvando..." : "Salvar")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private PessoaFisicaModel pessoa = new();
+    private string cepInput = string.Empty;
+    private bool carregando = true;
+    private bool buscandoCep = false;
+    private bool salvando = false;
+    private bool enderecoReadonly = true;
+    private string? erroCep;
+    private string? mensagemErro;
+    private string? mensagemSucesso;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            try
+            {
+                var result = await PessoaFisicaService.ObterPorIdAsync(Id.Value);
+                if (result != null)
+                {
+                    pessoa = result;
+                    FormatarCpf(pessoa.Cpf);
+                    FormatarTelefone(pessoa.Telefone);
+                    FormatarCep(pessoa.Endereco?.CEP ?? string.Empty);
+                    enderecoReadonly = !string.IsNullOrEmpty(cepInput);
+                }
+                else
+                {
+                    mensagemErro = "Registro não encontrado.";
+                }
+            }
+            catch (Exception ex)
+            {
+                mensagemErro = $"Erro ao carregar: {ex.Message}";
+            }
+        }
+        carregando = false;
+    }
+
+    private void FormatarCpf(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            pessoa.Cpf = string.Empty;
+            return;
+        }
+        var apenasNumeros = new string(value.Where(char.IsDigit).ToArray());
+        if (apenasNumeros.Length > 11) apenasNumeros = apenasNumeros.Substring(0, 11);
+
+        if (apenasNumeros.Length <= 3)
+            pessoa.Cpf = apenasNumeros;
+        else if (apenasNumeros.Length <= 6)
+            pessoa.Cpf = $"{apenasNumeros.Substring(0, 3)}.{apenasNumeros.Substring(3)}";
+        else if (apenasNumeros.Length <= 9)
+            pessoa.Cpf = $"{apenasNumeros.Substring(0, 3)}.{apenasNumeros.Substring(3, 3)}.{apenasNumeros.Substring(6)}";
+        else
+            pessoa.Cpf = $"{apenasNumeros.Substring(0, 3)}.{apenasNumeros.Substring(3, 3)}.{apenasNumeros.Substring(6, 3)}-{apenasNumeros.Substring(9)}";
+    }
+
+    private void FormatarTelefone(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            pessoa.Telefone = string.Empty;
+            return;
+        }
+        var apenasNumeros = new string(value.Where(char.IsDigit).ToArray());
+        if (apenasNumeros.Length > 11) apenasNumeros = apenasNumeros.Substring(0, 11);
+
+        if (apenasNumeros.Length == 0)
+            pessoa.Telefone = string.Empty;
+        else if (apenasNumeros.Length <= 2)
+            pessoa.Telefone = $"({apenasNumeros}";
+        else if (apenasNumeros.Length <= 6)
+            pessoa.Telefone = $"({apenasNumeros.Substring(0, 2)}) {apenasNumeros.Substring(2)}";
+        else if (apenasNumeros.Length <= 10)
+            pessoa.Telefone = $"({apenasNumeros.Substring(0, 2)}) {apenasNumeros.Substring(2, 4)}-{apenasNumeros.Substring(6)}";
+        else
+            pessoa.Telefone = $"({apenasNumeros.Substring(0, 2)}) {apenasNumeros.Substring(2, 5)}-{apenasNumeros.Substring(7)}";
+    }
+
+    private void FormatarCep(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            cepInput = string.Empty;
+            return;
+        }
+        var apenasNumeros = new string(value.Where(char.IsDigit).ToArray());
+        if (apenasNumeros.Length > 8) apenasNumeros = apenasNumeros.Substring(0, 8);
+
+        if (apenasNumeros.Length <= 5)
+            cepInput = apenasNumeros;
+        else
+            cepInput = $"{apenasNumeros.Substring(0, 5)}-{apenasNumeros.Substring(5)}";
+    }
+
+    private async Task CepKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await BuscarCep();
+    }
+
+    private async Task BuscarCep()
+    {
+        var cep = cepInput.Replace("-", "").Replace(".", "").Trim();
+        if (cep.Length != 8)
+        {
+            erroCep = "Informe um CEP válido com 8 dígitos.";
+            return;
+        }
+
+        erroCep = null;
+        buscandoCep = true;
+
+        try
+        {
+            var endereco = await PessoaFisicaService.ConsultarCepAsync(cep);
+            if (endereco != null)
+            {
+                var complementoAtual = pessoa.Endereco.Complemento;
+                pessoa.Endereco = endereco;
+                pessoa.Endereco.Complemento = complementoAtual; // preserva complemento manual
+                cepInput = endereco.CEP ?? cep;
+                enderecoReadonly = true;
+            }
+            else
+            {
+                erroCep = "CEP não encontrado. Verifique e tente novamente.";
+                enderecoReadonly = false;
+            }
+        }
+        catch
+        {
+            erroCep = "Falha ao consultar o CEP. Verifique sua conexão.";
+            enderecoReadonly = false;
+        }
+        finally
+        {
+            buscandoCep = false;
+        }
+    }
+
+    private async Task Salvar()
+    {
+        mensagemErro = null;
+        mensagemSucesso = null;
+        salvando = true;
+
+        try
+        {
+            var cep = cepInput.Replace("-", "").Replace(".", "").Trim();
+
+            if (Id.HasValue)
+            {
+                await PessoaFisicaService.AtualizarAsync(pessoa, cep);
+                mensagemSucesso = "Registro atualizado com sucesso!";
+                await Task.Delay(1500);
+                Nav.NavigateTo("/pessoa-fisica");
+            }
+            else
+            {
+                await PessoaFisicaService.CadastrarAsync(pessoa, cep);
+                mensagemSucesso = "Pessoa física cadastrada com sucesso!";
+                await Task.Delay(1500);
+                Nav.NavigateTo("/pessoa-fisica");
+            }
+        }
+        catch (Exception ex)
+        {
+            mensagemErro = $"Erro ao salvar: {ex.Message}";
+        }
+        finally
+        {
+            salvando = false;
+        }
+    }
+}

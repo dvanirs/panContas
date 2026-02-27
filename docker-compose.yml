@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pancontas.api:
+    image: ${DOCKER_REGISTRY-}pancontasapi
+    build:
+      context: .
+      dockerfile: panContas.API/Dockerfile
+    ports:
+      - "5262:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+
+  pancontas.front:
+    image: ${DOCKER_REGISTRY-}pancontasfront
+    build:
+      context: .
+      dockerfile: panContas.Front/Dockerfile
+    ports:
+      - "5100:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      # Passamos a URL do servidor interno local do docker para o Front end conseguir chamar a API corretamente
+      - ApiBaseUrl=http://pancontas.api:8080/
+    depends_on:
+      - pancontas.api

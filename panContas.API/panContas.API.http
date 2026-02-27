@@ -1,0 +1,98 @@
+@panContas.API_HostAddress = https://localhost:7112
+@panContas.API_HostAddressHttp = http://localhost:5262
+
+// --- PESSOA FISICA V1 ---
+
+### Obter todas as Pessoas Físicas
+GET {{panContas.API_HostAddress}}/api/v1/PessoaFisica
+Accept: application/json
+
+###
+
+### Obter Pessoa Física por ID (Mude o GUID abaixo)
+@pf_id = 00000000-0000-0000-0000-000000000000
+GET {{panContas.API_HostAddress}}/api/v1/PessoaFisica/{{pf_id}}
+Accept: application/json
+
+###
+
+### Criar Nova Pessoa Física passando um CEP via Query (Opcional se vazio)
+POST {{panContas.API_HostAddress}}/api/v1/PessoaFisica?cep=01001000
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "cpf": "12345678900",
+  "telefone": "(11) 99999-9999",
+  "dataNascimento": "1990-01-01T00:00:00.000Z",
+  "sexo": "M"
+}
+
+###
+
+### Atualizar Pessoa Física passando ID e um CEP novo opcional
+PUT {{panContas.API_HostAddress}}/api/v1/PessoaFisica/{{pf_id}}?cep=02002000
+Content-Type: application/json
+
+{
+  "id": "{{pf_id}}",
+  "nome": "João Silva Alterado",
+  "cpf": "12345678900",
+  "telefone": "(11) 88888-8888",
+  "dataNascimento": "1990-01-01T00:00:00.000Z",
+  "sexo": "M"
+}
+
+### 
+
+### Deletar Pessoa Física
+DELETE {{panContas.API_HostAddress}}/api/v1/PessoaFisica/{{pf_id}}
+
+###
+
+// --- PESSOA JURIDICA V1 ---
+
+### Obter todas as Pessoas Jurídicas
+GET {{panContas.API_HostAddress}}/api/v1/PessoaJuridica
+Accept: application/json
+
+###
+
+### Obter Pessoa Jurídica por ID (Mude o GUID abaixo)
+@pj_id = 00000000-0000-0000-0000-000000000000
+GET {{panContas.API_HostAddress}}/api/v1/PessoaJuridica/{{pj_id}}
+Accept: application/json
+
+###
+
+### Criar Nova Pessoa Jurídica passando um CEP
+POST {{panContas.API_HostAddress}}/api/v1/PessoaJuridica?cep=01001000
+Content-Type: application/json
+
+{
+  "nome": "Empresa Teste LTDA",
+  "cnpj": "11222333000199",
+  "telefone": "(11) 1234-5678",
+  "dataNascimento": "2010-01-01T00:00:00.000Z",
+  "sexo": "PJ"
+}
+
+###
+
+### Atualizar Pessoa Jurídica
+PUT {{panContas.API_HostAddress}}/api/v1/PessoaJuridica/{{pj_id}}?cep=02002000
+Content-Type: application/json
+
+{
+  "id": "{{pj_id}}",
+  "nome": "Empresa Teste Alterada",
+  "cnpj": "11222333000199",
+  "telefone": "(11) 1234-5678",
+  "dataNascimento": "2010-01-01T00:00:00.000Z",
+  "sexo": "PJ"
+}
+
+### 
+
+### Deletar Pessoa Jurídica
+DELETE {{panContas.API_HostAddress}}/api/v1/PessoaJuridica/{{pj_id}}
